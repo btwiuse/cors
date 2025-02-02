@@ -15,6 +15,7 @@ function addCorsIfNeeded(response: Response) {
 }
 
 function isUrl(url: string) {
+  url = decodeURIComponent(url);
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     // fix for urls like "https:/example.com"
     if (!url.startsWith("https:/")) {

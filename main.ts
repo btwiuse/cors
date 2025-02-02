@@ -7,7 +7,7 @@ function addCorsIfNeeded(response: Response) {
   if (!headers.has("access-control-allow-origin")) {
     headers.set("access-control-allow-origin", "*");
   }
-  
+
   if (!headers.has("access-control-allow-headers")) {
     headers.set("access-control-allow-headers", "*");
   }
@@ -15,13 +15,8 @@ function addCorsIfNeeded(response: Response) {
 }
 
 function isUrl(url: string) {
-  url = decodeURIComponent(url);
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    // fix for urls like "https:/example.com"
-    if (!url.startsWith("https:/")) {
-      return false;
-    }
-    url = url.replace("https:/", "https://");
+    return false;
   }
 
   try {
@@ -34,7 +29,13 @@ function isUrl(url: string) {
 
 async function handleRequest(request: Request) {
   const { pathname, search } = new URL(request.url);
-  const url = pathname.substring(1) + search;
+  let url = pathname.substring(1) + search;
+
+  url = decodeURIComponent(url);
+  // fix for urls like "https:/example.com"
+  if (url.startsWith("https:/") && !url.startsWith("https://")) {
+    url = url.replace("https:/", "https://");
+  }
 
   if (isUrl(url)) {
     console.log("proxy to %s", url);

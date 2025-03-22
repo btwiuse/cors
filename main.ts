@@ -36,6 +36,8 @@ async function handleRequest(request: Request) {
   if (url.startsWith("https:/") && !url.startsWith("https://")) {
     url = url.replace("https:/", "https://");
   }
+  if (url.startsWith("https://open-vsx.org/vscode/gallery/vscode/")) 
+    url = url.replace("vscode/gallery/vscode", "vscode/gallery");
 
   if (isUrl(url)) {
     console.log("proxy to %s", url);

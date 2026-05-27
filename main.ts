@@ -11,6 +11,11 @@ function addCorsIfNeeded(response: Response) {
   if (!headers.has("access-control-allow-headers")) {
     headers.set("access-control-allow-headers", "*");
   }
+
+  if (!headers.has("access-control-expose-headers")) {
+    headers.set("access-control-expose-headers", "*");
+  }
+
   return headers;
 }
 

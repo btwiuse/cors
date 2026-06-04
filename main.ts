@@ -53,6 +53,9 @@ async function handleRequest(request: Request) {
 
     const response = await fetch(url, request);
     const headers = addCorsIfNeeded(response);
+    headers.delete("content-security-policy");
+    headers.delete("content-security-policy-report-only");
+    headers.delete("x-frame-options");
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,

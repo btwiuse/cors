@@ -1,0 +1,100 @@
+import { marked } from "marked";
+// @ts-ignore: wrangler text module rule
+import readme from "./README.md";
+
+function addCorsIfNeeded(response: Response) {
+  const headers = new Headers(response.headers);
+
+  if (!headers.has("access-control-allow-origin")) {
+    headers.set("access-control-allow-origin", "*");
+  }
+
+  if (!headers.has("access-control-allow-headers")) {
+    headers.set("access-control-allow-headers", "*");
+  }
+
+  if (!headers.has("access-control-expose-headers")) {
+    headers.set("access-control-expose-headers", "*");
+  }
+
+  return headers;
+}
+
+function isUrl(url: string) {
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return false;
+  }
+
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function handleRequest(request: Request): Promise<Response> {
+  const { pathname, search } = new URL(request.url);
+  let url = pathname.substring(1) + search;
+
+  url = decodeURIComponent(url);
+  // fix for urls like "https:/example.com"
+  if (url.startsWith("https:/") && !url.startsWith("https://")) {
+    url = url.replace("https:/", "https://");
+  }
+  if (url.startsWith("https://open-vsx.org/vscode/gallery/vscode/"))
+    url = url.replace("vscode/gallery/vscode", "vscode/gallery");
+
+  if (isUrl(url)) {
+    console.log("proxy to %s", url);
+    const corsHeaders = addCorsIfNeeded(new Response());
+    if (request.method.toUpperCase() === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    const response = await fetch(url, request);
+    const headers = addCorsIfNeeded(response);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+
+  const body = marked.parse(readme as string);
+  const html = `<!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CORS Proxy</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.min.css">
+        <style>
+          body {
+            margin: 0;
+            background-color: var(--color-canvas-default);
+            color: var(--color-fg-default);
+          }
+          main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+          }
+        </style>
+      </head>
+      <body data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
+        <main class="markdown-body">
+          ${body}
+        </main>
+      </body>
+    </html>`;
+  return new Response(html, {
+    headers: {
+      "content-type": "text/html;charset=utf-8",
+    },
+  });
+}
+
+export default {
+  fetch: handleRequest,
+} satisfies ExportedHandler;
